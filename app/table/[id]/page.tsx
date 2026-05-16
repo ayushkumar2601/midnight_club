@@ -140,7 +140,7 @@ export default function TablePage({ params }: { params: Promise<{ id: string }> 
                 {isBottom && player.cards && player.cards.length > 0 && (
                   <div className="absolute top-[-60px] left-1/2 -translate-x-1/2 flex gap-1">
                     {player.cards.map((c, i) => (
-                      <div key={i} className="w-10 h-14 bg-white border border-white/20 shadow-lg flex flex-col items-center justify-center text-black text-xs font-serif font-bold">
+                      <div key={i} className={`w-10 h-14 bg-white border border-white/20 shadow-lg flex flex-col items-center justify-center text-xs font-serif font-bold ${c.suit === 'hearts' || c.suit === 'diamonds' ? 'text-red-500' : 'text-black'}`}>
                         {c.rank}
                         <span>{c.suit === 'hearts' ? '♥' : c.suit === 'diamonds' ? '♦' : c.suit === 'clubs' ? '♣' : '♠'}</span>
                       </div>
