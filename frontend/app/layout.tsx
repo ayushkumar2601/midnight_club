@@ -29,7 +29,7 @@ export const metadata: Metadata = {
   },
 }
 
-import { SocketProvider } from '../lib/socket/SocketProvider'
+import { SocketProvider } from '@/lib/socket/SocketProvider'
 
 export default function RootLayout({
   children,

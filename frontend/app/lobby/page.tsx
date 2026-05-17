@@ -5,8 +5,10 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowLeft, Plus, Users, ShieldCheck, Activity, Wallet } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { socket } from "../../lib/socket/socket";
-import { useWalletStore } from "../../lib/stores/useWalletStore";
+import { socket } from "@/lib/socket/socket";
+import { useWalletStore } from "@/lib/stores/useWalletStore";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:4000';
 
 export default function LobbyPage() {
   const router = useRouter();
@@ -17,7 +19,7 @@ export default function LobbyPage() {
   useEffect(() => {
     const fetchRooms = async () => {
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:4000'}/rooms`);
+        const res = await fetch(`${API_URL}/rooms`);
         const data = await res.json();
         
         const mappedTables = data.map((room: any) => ({

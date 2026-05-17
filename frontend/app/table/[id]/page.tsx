@@ -4,9 +4,9 @@ import { useEffect, useState, use, useRef } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, ShieldCheck, Cpu, EyeOff, Lock, AlertCircle, Sparkles, Send } from "lucide-react";
-import { socket } from "../../../lib/socket/socket";
-import { useGameStore } from "../../../lib/stores/useGameStore";
-import { useWalletStore } from "../../../lib/stores/useWalletStore";
+import { socket } from "@/lib/socket/socket";
+import { useGameStore } from "@/lib/stores/useGameStore";
+import { useWalletStore } from "@/lib/stores/useWalletStore";
 
 export default function TablePage({ params }: { params: Promise<{ id: string }> }) {
   const { id: roomId } = use(params);

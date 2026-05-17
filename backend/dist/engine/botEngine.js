@@ -111,7 +111,7 @@ const progressGameState = (io, roomId) => {
     const room = (0, roomManager_1.getRoom)(roomId);
     if (!room || !room.gameState.inProgress)
         return;
-    const state = room.gameState;
+    let state = room.gameState;
     // 1. Audit Folded State (Early Fold Victory)
     const activePlayers = state.players.filter(p => p.state !== 'folded' && p.state !== 'waiting');
     if (activePlayers.length <= 1) {
@@ -147,7 +147,8 @@ const progressGameState = (io, roomId) => {
                 break;
             }
             else {
-                room.gameState = (0, roundManager_1.advanceRound)(state);
+                state = (0, roundManager_1.advanceRound)(state);
+                room.gameState = state;
                 console.log(`[ROUND ADVANCE] Advanced room ${roomId} to ${state.round}. Community: ${state.communityCards.length} cards.`);
             }
         }

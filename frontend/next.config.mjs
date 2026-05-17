@@ -6,6 +6,10 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  // Ensure no server-only code leaks into client bundles
+  experimental: {
+    optimizePackageImports: ['lucide-react', 'framer-motion'],
+  },
 }
 
 export default nextConfig

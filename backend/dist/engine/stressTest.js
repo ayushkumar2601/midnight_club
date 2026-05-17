@@ -40,7 +40,7 @@ const runAutomatedStressTest = (roundsToRun = 100) => {
     for (let roundNum = 1; roundNum <= roundsToRun; roundNum++) {
         // console.log(`--- Hand #${roundNum} ---`);
         // Start Hand (posting blinds, dealing)
-        const state = room.gameState;
+        let state = room.gameState;
         state.players.forEach(p => {
             if (p.chips <= 0)
                 p.chips = 250000; // auto-rebuy
@@ -102,7 +102,8 @@ const runAutomatedStressTest = (roundsToRun = 100) => {
                         break;
                     }
                     else {
-                        room.gameState = (0, roundManager_1.advanceRound)(state);
+                        state = (0, roundManager_1.advanceRound)(state);
+                        room.gameState = state;
                     }
                 }
                 if (state.round === 'showdown' && state.inProgress) {

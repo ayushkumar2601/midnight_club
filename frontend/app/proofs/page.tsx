@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, ShieldCheck, Database, FileKey, Activity, Cpu } from "lucide-react";
-import { useGameStore } from "../../lib/stores/useGameStore";
+import { useGameStore } from "@/lib/stores/useGameStore";
 
 export default function ProofsDashboard() {
   const lastProof = useGameStore((state) => state.lastProof);

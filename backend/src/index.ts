@@ -1,79 +1,115 @@
+import 'dotenv/config';
 import express from 'express';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import cors from 'cors';
 import { setupSocketHandlers } from './socket';
+import { revalidateTimeline, getTimeline } from './midnight/replay';
+import { getActiveRooms } from './rooms/roomManager';
+import { initializeDemoTables } from './engine/demoSystem';
 
+// ─── Environment ─────────────────────────────────────────────
+const PORT = process.env.PORT || 4000;
+const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:3000';
+const NODE_ENV = process.env.NODE_ENV || 'development';
+const isProduction = NODE_ENV === 'production';
+
+// ─── Express App ─────────────────────────────────────────────
 const app = express();
-app.use(cors());
+
+// Production CORS: allow only the frontend origin. Dev: allow all.
+const corsOptions = {
+  origin: isProduction ? CLIENT_URL : '*',
+  methods: ['GET', 'POST'],
+  credentials: true,
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 
+// ─── HTTP Server ─────────────────────────────────────────────
 const httpServer = createServer(app);
+
+// ─── Socket.IO Server ────────────────────────────────────────
 const io = new Server(httpServer, {
   cors: {
-    origin: "*", // allow frontend access
-    methods: ["GET", "POST"]
-  }
+    origin: isProduction ? CLIENT_URL : '*',
+    methods: ['GET', 'POST'],
+    credentials: true,
+  },
+  transports: ['websocket', 'polling'],
+  pingTimeout: 60000,
+  pingInterval: 25000,
 });
 
-import { revalidateTimeline, getTimeline } from './midnight/replay';
+// ─── REST Routes ─────────────────────────────────────────────
 
-// Basic health check route
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok', message: 'Midnight Poker Engine running.' });
-});
-
-import { getActiveRooms } from './rooms/roomManager';
-
-// Get active rooms for lobby
-app.get('/rooms', (req, res) => {
-  res.json(getActiveRooms());
-});
-
-// Replay verification endpoint for hackathon demo
-app.get('/replay/:gameId', (req, res) => {
-  const timeline = getTimeline(req.params.gameId);
-  if (!timeline) {
-    return res.status(404).json({ error: "Timeline not found" });
-  }
-  
-  const verification = revalidateTimeline(req.params.gameId);
+// Health check endpoint (required for Render)
+app.get('/health', (_req, res) => {
   res.json({
-    timeline,
-    verificationResult: verification.isValid ? "PROVABLY_FAIR" : "CHEAT_DETECTED",
-    failedIndex: verification.failedEventIndex
+    status: 'ok',
+    message: 'Midnight Poker Engine running.',
+    uptime: process.uptime(),
+    env: NODE_ENV,
   });
 });
 
+// Ping endpoint for keep-alive
+app.get('/ping', (_req, res) => {
+  res.send('pong');
+});
+
+// Get active rooms for lobby
+app.get('/rooms', (_req, res) => {
+  res.json(getActiveRooms());
+});
+
+// Replay verification endpoint
+app.get('/replay/:gameId', (req, res) => {
+  const timeline = getTimeline(req.params.gameId);
+  if (!timeline) {
+    return res.status(404).json({ error: 'Timeline not found' });
+  }
+
+  const verification = revalidateTimeline(req.params.gameId);
+  res.json({
+    timeline,
+    verificationResult: verification.isValid ? 'PROVABLY_FAIR' : 'CHEAT_DETECTED',
+    failedIndex: verification.failedEventIndex,
+  });
+});
+
+// ─── Socket Handlers ─────────────────────────────────────────
 setupSocketHandlers(io);
 
-import { initializeDemoTables } from './engine/demoSystem';
-import { runAutomatedStressTest } from './engine/stressTest';
-
+// ─── Demo Tables ─────────────────────────────────────────────
 initializeDemoTables(io);
 
-// Execute comprehensive 100-round poker engine compliance and stress test - Watch Reload Trigger v1
-import fs from 'fs';
-import path from 'path';
-
-try {
-  const logs: string[] = [];
-  const originalLog = console.log;
-  console.log = (...args: any[]) => {
-    logs.push(args.join(' '));
-    originalLog(...args);
-  };
-
-  runAutomatedStressTest(100);
-
-  console.log = originalLog;
-  fs.writeFileSync(path.join(__dirname, '../test_output.log'), logs.join('\n'));
-} catch (err: any) {
-  console.error("CRITICAL: Poker Engine Stress Test Failed!", err);
-  fs.writeFileSync(path.join(__dirname, '../test_output.log'), `CRITICAL: Poker Engine Stress Test Failed!\n${err.message}\n${err.stack}`);
-}
-
-const PORT = process.env.PORT || 4000;
+// ─── Start Server ────────────────────────────────────────────
 httpServer.listen(PORT, () => {
-  console.log(`Backend poker engine listening on port ${PORT}`);
+  console.log(`\n══════════════════════════════════════════════════`);
+  console.log(`  MIDNIGHT HOLD'EM — POKER ENGINE`);
+  console.log(`  Environment: ${NODE_ENV}`);
+  console.log(`  Port: ${PORT}`);
+  console.log(`  Client URL: ${CLIENT_URL}`);
+  console.log(`  WebSocket transports: websocket, polling`);
+  console.log(`══════════════════════════════════════════════════\n`);
+});
+
+// ─── Graceful Shutdown ───────────────────────────────────────
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received. Shutting down gracefully...');
+  io.close();
+  httpServer.close(() => {
+    console.log('Server closed.');
+    process.exit(0);
+  });
+});
+
+process.on('SIGINT', () => {
+  console.log('SIGINT received. Shutting down...');
+  io.close();
+  httpServer.close(() => {
+    process.exit(0);
+  });
 });

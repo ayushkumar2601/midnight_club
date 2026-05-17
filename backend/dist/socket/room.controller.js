@@ -16,6 +16,7 @@ const handleJoinRoom = (io, socket, { roomId, player }) => {
         cards: []
     } : undefined);
     if (activePlayer) {
+        socket.data.playerId = activePlayer.id;
         (0, roomManager_1.joinRoom)(roomId, activePlayer);
     }
     else {
