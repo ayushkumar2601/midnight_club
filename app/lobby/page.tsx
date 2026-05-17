@@ -12,12 +12,35 @@ export default function LobbyPage() {
   const router = useRouter();
   const wallet = useWalletStore();
   
-  // Mock realtime data for the lobby
-  const [tables, setTables] = useState([
-    { id: "M-NLH-8X9A", type: "No Limit Hold'em", stakes: "1K / 2K USDC", players: 6, max: 8, pot: "$ 45.2K", status: "Open" },
-    { id: "M-PLO-2B4F", type: "Pot Limit Omaha", stakes: "500 / 1K USDC", players: 4, max: 6, pot: "$ 12.8K", status: "Open" },
-    { id: "M-NLH-7C1X", type: "No Limit Hold'em", stakes: "10K / 20K USDC", players: 8, max: 8, pot: "$ 240.5K", status: "Full" },
-  ]);
+  const [tables, setTables] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchRooms = async () => {
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:4000'}/rooms`);
+        const data = await res.json();
+        
+        const mappedTables = data.map((room: any) => ({
+          id: room.id,
+          name: room.name,
+          type: room.type,
+          stakes: room.stakes,
+          players: room.players,
+          max: room.maxPlayers,
+          pot: `$ ${room.pot.toLocaleString()}`,
+          status: room.players >= room.maxPlayers ? "Full" : "Open"
+        }));
+        
+        setTables(mappedTables);
+      } catch (err) {
+        console.error("Failed to fetch rooms", err);
+      }
+    };
+    
+    fetchRooms();
+    const interval = setInterval(fetchRooms, 3000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleJoin = (tableId: string) => {
     if (!wallet.isConnected) {
@@ -29,17 +52,30 @@ export default function LobbyPage() {
 
   const handleCreate = () => {
     if (!wallet.isConnected) {
-      alert("Please connect wallet first");
-      return;
+      wallet.connect();
     }
     const newId = `M-NLH-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
     router.push(`/table/${newId}`);
   };
 
+  const handleQuickJoin = () => {
+    if (!wallet.isConnected) {
+      wallet.connect();
+    }
+    // Find first table with players < max
+    const openTable = tables.find(t => t.players < t.max);
+    if (openTable) {
+      router.push(`/table/${openTable.id}`);
+    } else {
+      const newId = `M-NLH-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+      router.push(`/table/${newId}`);
+    }
+  };
+
   return (
     <div className="relative w-full min-h-screen bg-black text-white font-sans selection:bg-blue-500/30 overflow-hidden">
       {/* Background Grid */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(59,130,246,0.05)_0%,#000000_100%)] z-0" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(26,61,232,0.05)_0%,var(--background)_100%)] z-0" />
       <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:40px_40px] opacity-30 z-0" />
       
       {/* Navbar */}
@@ -49,7 +85,7 @@ export default function LobbyPage() {
             <ArrowLeft size={20} />
           </Link>
           <div className="text-lg font-black tracking-tighter uppercase flex items-center gap-2">
-            <div className="w-2 h-2 bg-blue-500 rounded-none shadow-[0_0_10px_rgba(59,130,246,0.8)]" />
+            <div className="w-2 h-2 bg-[var(--primary)] rounded-none shadow-[0_0_10px_var(--primary)]" />
             Midnight Protocol
           </div>
         </div>
@@ -64,7 +100,7 @@ export default function LobbyPage() {
             {wallet.isConnected && (
               <div className="flex flex-col items-end pr-4 border-r border-white/10">
                 <span className="text-white/40 text-[10px] uppercase tracking-widest font-mono">Balance</span>
-                <div className="flex items-center gap-1.5 text-cyan-400">
+                <div className="flex items-center gap-1.5 text-[var(--accent-cyan)]">
                   <Wallet size={12} />
                   <span className="text-sm font-bold tracking-tight">${wallet.balance.toLocaleString()}</span>
                 </div>
@@ -75,7 +111,7 @@ export default function LobbyPage() {
               className={`px-6 py-2.5 text-[10px] font-bold uppercase tracking-widest border transition-all duration-300 rounded-sm ${
                 wallet.isConnected 
                   ? "border-green-500/30 text-green-400 hover:bg-green-500/10 shadow-[0_0_20px_rgba(34,197,94,0.1)]" 
-                  : "border-blue-500/30 text-blue-400 hover:bg-blue-500/10 shadow-[0_0_20px_rgba(59,130,246,0.2)]"
+                  : "border-[var(--primary)]/30 text-[var(--primary)] hover:bg-[var(--primary)]/10 shadow-[0_0_20px_rgba(253,82,0,0.2)]"
               }`}
             >
               {wallet.isConnecting ? "Connecting..." : wallet.isConnected ? wallet.address : "Connect Wallet"}
@@ -93,16 +129,24 @@ export default function LobbyPage() {
         >
           <div>
             <h1 className="text-3xl md:text-5xl font-black uppercase tracking-tighter mb-2 drop-shadow-md">
-              Active <span className="text-cyan-400">Nodes</span>
+              Active <span className="text-[var(--accent-cyan)]">Nodes</span>
             </h1>
             <p className="text-white/40 text-[10px] font-mono uppercase tracking-[0.2em]">Select a table to initialize session</p>
           </div>
-          <button 
-            onClick={handleCreate}
-            className="flex items-center gap-2 px-6 py-3 bg-[#0a1824] border border-cyan-900/50 text-cyan-400 text-xs font-bold uppercase tracking-widest transition-all duration-300 hover:bg-[#0f2438] hover:border-cyan-400 rounded-sm hover:shadow-[0_0_30px_rgba(34,211,238,0.2)]"
-          >
-            <Plus size={16} /> Deploy New Table
-          </button>
+          <div className="flex gap-4">
+            <button 
+              onClick={handleQuickJoin}
+              className="flex items-center gap-2 px-6 py-3 bg-[var(--primary)] text-[#050505] text-xs font-black uppercase tracking-widest transition-all duration-300 hover:shadow-[0_0_30px_rgba(253,82,0,0.3)] rounded-sm"
+            >
+              Quick Match
+            </button>
+            <button 
+              onClick={handleCreate}
+              className="flex items-center gap-2 px-6 py-3 bg-[var(--background-secondary)] border border-[var(--accent-cyan)]/50 text-[var(--accent-cyan)] text-xs font-bold uppercase tracking-widest transition-all duration-300 hover:bg-[var(--background-tertiary)] hover:border-[var(--accent-cyan)] rounded-sm hover:shadow-[0_0_30px_rgba(88,166,255,0.2)]"
+            >
+              <Plus size={16} /> Deploy New Table
+            </button>
+          </div>
         </motion.div>
 
         {/* Dashboard Stats */}
@@ -119,10 +163,10 @@ export default function LobbyPage() {
             </div>
           </motion.div>
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.5 }} className="bg-[#0a0a0a] border border-white/5 p-6 flex flex-col gap-2 relative overflow-hidden rounded-sm shadow-xl">
-            <div className="absolute right-0 top-0 w-32 h-32 bg-blue-500/10 blur-3xl rounded-full" />
+            <div className="absolute right-0 top-0 w-32 h-32 bg-[var(--accent-blue)]/10 blur-3xl rounded-full" />
             <span className="text-white/30 text-[10px] font-mono uppercase tracking-widest">Midnight Verification</span>
             <div className="flex items-center gap-2">
-              <ShieldCheck size={18} className="text-blue-400" />
+              <ShieldCheck size={18} className="text-[var(--accent-blue)]" />
               <span className="text-2xl font-black text-white drop-shadow-md">Active</span>
             </div>
           </motion.div>
@@ -156,8 +200,8 @@ export default function LobbyPage() {
                 onClick={() => row.status !== "Full" && handleJoin(row.id)}
               >
                 <div className="col-span-2 flex flex-col gap-1.5">
-                  <span className="text-cyan-400 font-bold group-hover:text-cyan-300 transition-colors tracking-widest">{row.id}</span>
-                  <span className="text-white/30 text-[9px] uppercase">{row.type}</span>
+                  <span className="text-[var(--accent-cyan)] font-bold group-hover:text-white transition-colors tracking-widest">{row.name}</span>
+                  <span className="text-white/30 text-[9px] uppercase">{row.id} • {row.type}</span>
                 </div>
                 <div className="text-white/70">{row.stakes}</div>
                 <div className="text-white/50 flex items-center gap-1.5">
@@ -172,7 +216,7 @@ export default function LobbyPage() {
                     className={`px-6 py-2.5 bg-transparent border uppercase tracking-widest text-[9px] font-bold transition-all duration-300 rounded-sm ${
                       row.status === "Full" 
                         ? "border-white/5 text-white/20 cursor-not-allowed bg-white/[0.01]" 
-                        : "border-white/10 text-white/60 hover:border-cyan-400 hover:text-cyan-400 hover:bg-cyan-400/5 hover:shadow-[0_0_15px_rgba(34,211,238,0.1)]"
+                        : "border-white/10 text-white/60 hover:border-[var(--accent-cyan)] hover:text-[var(--accent-cyan)] hover:bg-[var(--accent-cyan)]/5 hover:shadow-[0_0_15px_rgba(88,166,255,0.1)]"
                     }`}
                   >
                     {row.status === "Full" ? "Spectate" : "Join Node"}

@@ -1,0 +1,13 @@
+CRITICAL: Poker Engine Stress Test Failed!
+Stress test failed: 100 deadlock(s) detected.
+Error: Stress test failed: 100 deadlock(s) detected.
+    at runAutomatedStressTest (/Users/ayush/Downloads/velorix-website-code/backend/src/engine/stressTest.ts:204:11)
+    at Object.<anonymous> (/Users/ayush/Downloads/velorix-website-code/backend/src/index.ts:67:25)
+    at Module.<anonymous> (node:internal/modules/cjs/loader:1830:14)
+    at Module._compile (/Users/ayush/Downloads/velorix-website-code/backend/node_modules/source-map-support/source-map-support.js:568:25)
+    at Module.m._compile (/private/var/folders/rl/3nt3vgts4rlcc5gmrm3jbd8m0000gn/T/ts-node-dev-hook-493039385600359.js:69:33)
+    at node:internal/modules/cjs/loader:1961:10
+    at require.extensions..jsx.require.extensions..js (/private/var/folders/rl/3nt3vgts4rlcc5gmrm3jbd8m0000gn/T/ts-node-dev-hook-493039385600359.js:114:20)
+    at require.extensions.<computed> (/private/var/folders/rl/3nt3vgts4rlcc5gmrm3jbd8m0000gn/T/ts-node-dev-hook-493039385600359.js:71:20)
+    at Object.nodeDevHook [as .ts] (/Users/ayush/Downloads/velorix-website-code/backend/node_modules/ts-node-dev/lib/hook.js:63:13)
+    at Module.load (node:internal/modules/cjs/loader:1553:32)

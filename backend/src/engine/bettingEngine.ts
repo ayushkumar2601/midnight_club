@@ -6,26 +6,33 @@ export const handlePlayerAction = (state: GameState, playerId: string, actionPay
   if (playerIndex !== state.activePlayerIndex) throw new Error("Not player's turn");
 
   const player = state.players[playerIndex];
-  const newState = { ...state, players: [...state.players] };
-  const newPlayer = { ...player };
-  newState.players[playerIndex] = newPlayer;
+  if (player.state !== 'active') {
+    throw new Error("Player cannot act in current state");
+  }
+
+  const newState = { ...state, players: state.players.map(p => ({ ...p })) };
+  const newPlayer = newState.players[playerIndex];
 
   const { action, amount } = actionPayload;
 
   switch (action) {
     case 'fold':
       newPlayer.state = 'folded';
+      newPlayer.hasActedThisRound = true;
       break;
 
     case 'check':
       if (newPlayer.bet < newState.currentBet) {
         throw new Error("Cannot check, must call or raise");
       }
+      newPlayer.hasActedThisRound = true;
       break;
 
     case 'call':
       const callAmount = newState.currentBet - newPlayer.bet;
-      if (callAmount > newPlayer.chips) {
+      if (callAmount <= 0) {
+        // Technically a check
+      } else if (callAmount >= newPlayer.chips) {
         // implicitly all-in
         newState.pot += newPlayer.chips;
         newPlayer.bet += newPlayer.chips;
@@ -36,17 +43,27 @@ export const handlePlayerAction = (state: GameState, playerId: string, actionPay
         newPlayer.chips -= callAmount;
         newPlayer.bet += callAmount;
       }
+      newPlayer.hasActedThisRound = true;
       break;
 
     case 'raise':
-      if (!amount) throw new Error("Raise amount required");
-      const raiseAmount = amount; // total bet amount player wants to reach
+      if (amount === undefined || amount === null) throw new Error("Raise amount required");
+      const raiseAmount = Number(amount);
+      if (isNaN(raiseAmount) || raiseAmount <= 0) throw new Error("Invalid raise amount");
+      
       if (raiseAmount <= newState.currentBet) {
-        throw new Error("Raise amount must be greater than current bet");
+        throw new Error("Raise amount must be strictly greater than current bet");
       }
+      
       const additionalChips = raiseAmount - newPlayer.bet;
       if (additionalChips > newPlayer.chips) {
         throw new Error("Not enough chips to raise that amount");
+      }
+      
+      // Min raise logic: double current bet
+      const minRaise = newState.currentBet > 0 ? newState.currentBet * 2 : state.bigBlind;
+      if (raiseAmount < minRaise && additionalChips < newPlayer.chips) {
+        throw new Error(`Raise must be at least ${minRaise} or all-in`);
       }
       
       newState.pot += additionalChips;
@@ -57,6 +74,15 @@ export const handlePlayerAction = (state: GameState, playerId: string, actionPay
       if (newPlayer.chips === 0) {
         newPlayer.state = 'all-in';
       }
+
+      // Mark other active players as needing to act again since bet increased
+      newState.players.forEach((p, idx) => {
+        if (idx !== playerIndex && p.state === 'active') {
+          p.hasActedThisRound = false;
+        }
+      });
+
+      newPlayer.hasActedThisRound = true;
       break;
 
     default:
@@ -71,8 +97,8 @@ export const handlePlayerAction = (state: GameState, playerId: string, actionPay
 
 export const getNextActivePlayerIndex = (state: GameState): number => {
   let nextIndex = (state.activePlayerIndex + 1) % state.players.length;
-  // keep looking until we find an active player or loop fully
   let loops = 0;
+  // Skip anyone who is not currently active (waiting, folded, or all-in)
   while (state.players[nextIndex].state !== 'active' && loops < state.players.length) {
     nextIndex = (nextIndex + 1) % state.players.length;
     loops++;
@@ -81,13 +107,9 @@ export const getNextActivePlayerIndex = (state: GameState): number => {
 };
 
 export const isRoundComplete = (state: GameState): boolean => {
-  const activePlayers = state.players.filter(p => p.state === 'active' || p.state === 'all-in');
-  if (activePlayers.length <= 1) return true; // everyone else folded
+  const activePlayers = state.players.filter(p => p.state === 'active');
+  if (activePlayers.length <= 1) return true; // only one active player remains or none
 
-  // all non-all-in active players must have matched the current bet
-  return state.players.every(p => {
-    if (p.state === 'folded' || p.state === 'all-in') return true;
-    if (p.state === 'active') return p.bet === state.currentBet;
-    return true; // waiting state
-  });
+  // every active player must have acted at least once AND matched the current bet
+  return activePlayers.every(p => p.hasActedThisRound && p.bet === state.currentBet);
 };

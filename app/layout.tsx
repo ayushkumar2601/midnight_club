@@ -1,9 +1,10 @@
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
+import { Outfit, JetBrains_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
+const outfit = Outfit({ subsets: ["latin"], variable: "--font-outfit" });
+const jetbrains = JetBrains_Mono({ subsets: ["latin"], variable: "--font-jetbrains" });
 
 export const metadata: Metadata = {
   title: 'Midnight Hold\'em - Provably Fair Web3 Poker',
@@ -36,8 +37,8 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className="bg-[#050816]">
-      <body className={`${inter.variable} font-sans antialiased bg-[#050816]`}>
+    <html lang="en" className="bg-[#050505]">
+      <body className={`${outfit.variable} ${jetbrains.variable} font-sans antialiased bg-[#050505]`}>
         <SocketProvider>
           {children}
           {process.env.NODE_ENV === 'production' && <Analytics />}

@@ -15,6 +15,10 @@ export interface Player {
   bet: number;
   state: PlayerState;
   cards: Card[];
+  avatarColor?: string;
+  title?: string;
+  playStyle?: string;
+  hasActedThisRound?: boolean;
 }
 
 export type GameRound = 'preflop' | 'flop' | 'turn' | 'river' | 'showdown';
@@ -47,6 +51,10 @@ export interface GameState {
 
 export interface Room {
   id: string;
+  name?: string;
+  type?: string;
+  stakes?: string;
+  isDemo?: boolean;
   gameState: GameState;
   spectators: string[]; // socket ids
 }

@@ -31,6 +31,7 @@ interface GameStore {
   setRoomId: (id: string) => void;
   setPlayerId: (id: string) => void;
   setLastProof: (proof: any) => void;
+  setPrivateCards: (playerId: string, cards: Card[]) => void;
 }
 
 export const useGameStore = create<GameStore>((set) => ({
@@ -42,4 +43,11 @@ export const useGameStore = create<GameStore>((set) => ({
   setRoomId: (id) => set({ roomId: id }),
   setPlayerId: (id) => set({ playerId: id }),
   setLastProof: (proof) => set({ lastProof: proof }),
+  setPrivateCards: (playerId, cards) => set((state) => {
+    if (!state.gameState) return state;
+    const newPlayers = state.gameState.players.map(p => 
+      p.id === playerId ? { ...p, cards } : p
+    );
+    return { gameState: { ...state.gameState, players: newPlayers } };
+  }),
 }));

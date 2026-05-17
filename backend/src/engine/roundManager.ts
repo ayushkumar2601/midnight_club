@@ -4,10 +4,11 @@ import { drawCards } from './deck';
 export const advanceRound = (state: GameState): GameState => {
   const newState = { ...state };
   
-  // reset bets for the new round
+  // reset bets and action state for the new round
   newState.players = newState.players.map(p => ({
     ...p,
-    bet: 0
+    bet: 0,
+    hasActedThisRound: false
   }));
   newState.currentBet = 0;
 

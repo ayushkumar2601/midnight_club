@@ -4,36 +4,36 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* Midnight Hold'em Cyberpunk Palette */
-  --background: #050816;
-  --background-secondary: #0A1020;
-  --background-tertiary: #10182B;
+  /* Midnight Hold'em Dark Luxury Cyberpunk Palette */
+  --background: #050505;
+  --background-secondary: #0A0A0A;
+  --background-tertiary: #111111;
   --foreground: #ffffff;
   
   /* Accent Colors */
-  --accent-blue: #3B82F6;
+  --accent-blue: #1A3DE8;
   --accent-purple: #8B5CF6;
-  --accent-cyan: #06B6D4;
-  --accent-gold: #FBBF24;
+  --accent-cyan: #58A6FF;
+  --accent-gold: #FD5200;
   
   /* Card/Glass */
-  --card: rgba(16, 24, 43, 0.6);
+  --card: rgba(10, 10, 10, 0.6);
   --card-foreground: #ffffff;
-  --card-border: rgba(255, 255, 255, 0.08);
+  --card-border: rgba(255, 255, 255, 0.05);
   
-  --popover: rgba(10, 16, 32, 0.95);
+  --popover: rgba(10, 10, 10, 0.95);
   --popover-foreground: #ffffff;
   
-  --primary: #3B82F6;
+  --primary: #FD5200;
   --primary-foreground: #ffffff;
   
-  --secondary: rgba(139, 92, 246, 0.2);
-  --secondary-foreground: #8B5CF6;
+  --secondary: rgba(88, 166, 255, 0.2);
+  --secondary-foreground: #58A6FF;
   
   --muted: rgba(255, 255, 255, 0.05);
-  --muted-foreground: rgba(255, 255, 255, 0.5);
+  --muted-foreground: rgba(255, 255, 255, 0.7);
   
-  --accent: #8B5CF6;
+  --accent: #1A3DE8;
   --accent-foreground: #ffffff;
   
   --destructive: #EF4444;
@@ -41,29 +41,29 @@
   
   --border: rgba(255, 255, 255, 0.08);
   --input: rgba(255, 255, 255, 0.05);
-  --ring: #3B82F6;
+  --ring: #FD5200;
   
-  --chart-1: #3B82F6;
-  --chart-2: #8B5CF6;
-  --chart-3: #06B6D4;
-  --chart-4: #FBBF24;
-  --chart-5: #10B981;
+  --chart-1: #FD5200;
+  --chart-2: #FFB347;
+  --chart-3: #58A6FF;
+  --chart-4: #1A3DE8;
+  --chart-5: #111111;
   
   --radius: 0px;
   
-  --sidebar: rgba(10, 16, 32, 0.8);
+  --sidebar: rgba(10, 10, 10, 0.8);
   --sidebar-foreground: #ffffff;
-  --sidebar-primary: #3B82F6;
+  --sidebar-primary: #FD5200;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: rgba(139, 92, 246, 0.2);
-  --sidebar-accent-foreground: #8B5CF6;
+  --sidebar-accent: rgba(88, 166, 255, 0.2);
+  --sidebar-accent-foreground: #58A6FF;
   --sidebar-border: rgba(255, 255, 255, 0.08);
-  --sidebar-ring: #3B82F6;
+  --sidebar-ring: #FD5200;
 }
 
 @theme inline {
-  --font-sans: var(--font-inter), 'Inter', sans-serif;
-  --font-mono: 'Courier New', Courier, monospace;
+  --font-sans: var(--font-outfit), 'Outfit', sans-serif;
+  --font-mono: var(--font-jetbrains), 'JetBrains Mono', monospace;
   --color-background: var(--background);
   --color-background-secondary: var(--background-secondary);
   --color-background-tertiary: var(--background-tertiary);
@@ -133,7 +133,7 @@
 
 /* Glow effects */
 .glow-blue {
-  box-shadow: 0 0 20px rgba(59, 130, 246, 0.3), 0 0 40px rgba(59, 130, 246, 0.1);
+  box-shadow: 0 0 20px rgba(26, 61, 232, 0.3), 0 0 40px rgba(26, 61, 232, 0.1);
 }
 
 .glow-purple {
@@ -141,11 +141,11 @@
 }
 
 .glow-cyan {
-  box-shadow: 0 0 20px rgba(6, 182, 212, 0.3), 0 0 40px rgba(6, 182, 212, 0.1);
+  box-shadow: 0 0 20px rgba(88, 166, 255, 0.3), 0 0 40px rgba(88, 166, 255, 0.1);
 }
 
 .glow-gold {
-  box-shadow: 0 0 20px rgba(251, 191, 36, 0.3), 0 0 40px rgba(251, 191, 36, 0.1);
+  box-shadow: 0 0 20px rgba(253, 82, 0, 0.3), 0 0 40px rgba(253, 82, 0, 0.1);
 }
 
 /* Animated gradient border */

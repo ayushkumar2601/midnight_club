@@ -19,6 +19,10 @@ export function SocketProvider({ children }: { children: ReactNode }) {
       setGameState(state);
     });
 
+    socket.on('syncPrivateCards', ({ playerId, cards }) => {
+      useGameStore.getState().setPrivateCards(playerId, cards);
+    });
+
     socket.on('showdown', (data) => {
       // data contains results, winnerId, pot, proof
       setLastProof(data.proof);
@@ -30,6 +34,11 @@ export function SocketProvider({ children }: { children: ReactNode }) {
     });
 
     return () => {
+      socket.off('connect');
+      socket.off('syncState');
+      socket.off('syncPrivateCards');
+      socket.off('showdown');
+      socket.off('disconnect');
       socket.disconnect();
     };
   }, [setGameState, setLastProof]);

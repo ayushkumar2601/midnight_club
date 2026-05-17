@@ -23,58 +23,133 @@ const rankValues: Record<string, number> = {
   'J': 11, 'Q': 12, 'K': 13, 'A': 14
 };
 
-// Extremely simplified basic score evaluator for Phase 1. 
-// A real poker engine would compare kickers recursively.
+const getKickerScore = (vals: number[]): number => {
+  let s = 0;
+  let mult = 1;
+  for (let i = vals.length - 1; i >= 0; i--) {
+    s += vals[i] * mult;
+    mult *= 15;
+  }
+  return s;
+};
+
 export const evaluateHand = (holeCards: Card[], communityCards: Card[]): { rank: HandRank, score: number } => {
   const allCards = [...holeCards, ...communityCards];
-  
   if (allCards.length === 0) return { rank: 'High Card', score: 0 };
 
-  const ranks = allCards.map(c => rankValues[c.rank]).sort((a, b) => b - a);
-  const suits = allCards.map(c => c.suit);
+  const cardVals = allCards.map(c => rankValues[c.rank]).sort((a, b) => b - a);
 
-  const rankCounts: Record<number, number> = {};
-  ranks.forEach(r => rankCounts[r] = (rankCounts[r] || 0) + 1);
+  // Group counts
+  const counts: Record<number, number> = {};
+  cardVals.forEach(v => counts[v] = (counts[v] || 0) + 1);
 
-  const suitCounts: Record<string, number> = {};
-  suits.forEach(s => suitCounts[s] = (suitCounts[s] || 0) + 1);
+  // Check Flush
+  const suitCounts: Record<string, Card[]> = {};
+  allCards.forEach(c => {
+    suitCounts[c.suit] = suitCounts[c.suit] || [];
+    suitCounts[c.suit].push(c);
+  });
+  const flushSuit = Object.keys(suitCounts).find(suit => suitCounts[suit].length >= 5);
+  const isFlush = !!flushSuit;
 
-  const isFlush = Object.values(suitCounts).some(count => count >= 5);
-  
-  // Straight detection
-  const uniqueRanks = Array.from(new Set(ranks));
+  // Check Straight
+  const uniqueVals = Array.from(new Set(cardVals)).sort((a, b) => b - a);
   let isStraight = false;
   let straightHigh = 0;
-  
-  for (let i = 0; i <= uniqueRanks.length - 5; i++) {
-    if (uniqueRanks[i] - uniqueRanks[i+4] === 4) {
+
+  for (let i = 0; i <= uniqueVals.length - 5; i++) {
+    if (uniqueVals[i] - uniqueVals[i+4] === 4) {
       isStraight = true;
-      straightHigh = uniqueRanks[i];
+      straightHigh = uniqueVals[i];
       break;
     }
   }
-
-  // Handle Ace-low straight (A-2-3-4-5)
-  if (!isStraight && uniqueRanks.includes(14) && uniqueRanks.includes(2) && uniqueRanks.includes(3) && uniqueRanks.includes(4) && uniqueRanks.includes(5)) {
+  // Ace-low straight
+  if (!isStraight && uniqueVals.includes(14) && uniqueVals.includes(5) && uniqueVals.includes(4) && uniqueVals.includes(3) && uniqueVals.includes(2)) {
     isStraight = true;
     straightHigh = 5;
   }
 
-  const counts = Object.values(rankCounts).sort((a, b) => b - a);
-  
-  if (isStraight && isFlush) {
-    if (straightHigh === 14) return { rank: 'Royal Flush', score: 1000000 };
-    return { rank: 'Straight Flush', score: 900000 + straightHigh };
+  // Straight Flush / Royal Flush check
+  if (isFlush && flushSuit) {
+    const flushCards = suitCounts[flushSuit].map(c => rankValues[c.rank]).sort((a, b) => b - a);
+    const uniqueFlushVals = Array.from(new Set(flushCards));
+    let hasSf = false;
+    let sfHigh = 0;
+    
+    for (let i = 0; i <= uniqueFlushVals.length - 5; i++) {
+      if (uniqueFlushVals[i] - uniqueFlushVals[i+4] === 4) {
+        hasSf = true;
+        sfHigh = uniqueFlushVals[i];
+        break;
+      }
+    }
+    if (!hasSf && uniqueFlushVals.includes(14) && uniqueFlushVals.includes(5) && uniqueFlushVals.includes(4) && uniqueFlushVals.includes(3) && uniqueFlushVals.includes(2)) {
+      hasSf = true;
+      sfHigh = 5;
+    }
+    
+    if (hasSf) {
+      if (sfHigh === 14) return { rank: 'Royal Flush', score: 1000000 };
+      return { rank: 'Straight Flush', score: 900000 + sfHigh };
+    }
   }
-  if (counts[0] === 4) return { rank: 'Four of a Kind', score: 800000 + ranks[0] };
-  if (counts[0] === 3 && counts[1] >= 2) return { rank: 'Full House', score: 700000 + ranks[0] };
-  if (isFlush) return { rank: 'Flush', score: 600000 + ranks[0] };
-  if (isStraight) return { rank: 'Straight', score: 500000 + straightHigh };
-  if (counts[0] === 3) return { rank: 'Three of a Kind', score: 400000 + ranks[0] };
-  if (counts[0] === 2 && counts[1] === 2) return { rank: 'Two Pair', score: 300000 + ranks[0] };
-  if (counts[0] === 2) return { rank: 'Pair', score: 200000 + ranks[0] };
-  
-  return { rank: 'High Card', score: 100000 + ranks[0] };
+
+  // Count groups
+  const quads = Object.keys(counts).filter(k => counts[Number(k)] === 4).map(Number).sort((a,b) => b-a);
+  const trips = Object.keys(counts).filter(k => counts[Number(k)] === 3).map(Number).sort((a,b) => b-a);
+  const pairs = Object.keys(counts).filter(k => counts[Number(k)] === 2).map(Number).sort((a,b) => b-a);
+
+  // 1. Four of a Kind
+  if (quads.length > 0) {
+    const q = quads[0];
+    const kicker = cardVals.find(v => v !== q) || 0;
+    return { rank: 'Four of a Kind', score: 800000 + q * 15 + kicker };
+  }
+
+  // 2. Full House
+  if (trips.length > 0 && (trips.length > 1 || pairs.length > 0)) {
+    const t = trips[0];
+    const p = trips.length > 1 ? trips[1] : pairs[0];
+    return { rank: 'Full House', score: 700000 + t * 15 + p };
+  }
+
+  // 3. Flush
+  if (isFlush && flushSuit) {
+    const flushVals = suitCounts[flushSuit].map(c => rankValues[c.rank]).sort((a, b) => b - a).slice(0, 5);
+    return { rank: 'Flush', score: 600000 + getKickerScore(flushVals) };
+  }
+
+  // 4. Straight
+  if (isStraight) {
+    return { rank: 'Straight', score: 500000 + straightHigh };
+  }
+
+  // 5. Three of a Kind
+  if (trips.length > 0) {
+    const t = trips[0];
+    const kickers = cardVals.filter(v => v !== t).slice(0, 2);
+    return { rank: 'Three of a Kind', score: 400000 + t * 225 + getKickerScore(kickers) };
+  }
+
+  // 6. Two Pair
+  if (pairs.length >= 2) {
+    const p1 = pairs[0];
+    const p2 = pairs[1];
+    const kicker = cardVals.find(v => v !== p1 && v !== p2) || 0;
+    return { rank: 'Two Pair', score: 300000 + p1 * 225 + p2 * 15 + kicker };
+  }
+
+  // 7. Pair
+  if (pairs.length > 0) {
+    const p = pairs[0];
+    const kickers = cardVals.filter(v => v !== p).slice(0, 3);
+    return { rank: 'Pair', score: 200000 + p * 3375 + getKickerScore(kickers) };
+  }
+
+  // 8. High Card
+  const top5 = cardVals.slice(0, 5);
+  return { rank: 'High Card', score: 100000 + getKickerScore(top5) };
 };
 
 export const determineWinner = (players: Player[], communityCards: Card[]): HandResult[] => {

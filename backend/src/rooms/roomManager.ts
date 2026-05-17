@@ -3,11 +3,14 @@ import { createInitialGameState } from '../state/gameState';
 
 const rooms: Record<string, Room> = {};
 
-export const createRoom = (roomId: string): Room => {
+export const createRoom = (roomId: string, name?: string, type?: string, stakes?: string): Room => {
   if (rooms[roomId]) throw new Error("Room already exists");
   
   const room: Room = {
     id: roomId,
+    name,
+    type,
+    stakes,
     gameState: createInitialGameState(),
     spectators: []
   };
@@ -64,4 +67,19 @@ export const removeSpectator = (roomId: string, socketId: string): void => {
   if (room) {
     room.spectators = room.spectators.filter(id => id !== socketId);
   }
+};
+
+export const getActiveRooms = () => {
+  return Object.values(rooms).map(room => ({
+    id: room.id,
+    name: room.name || `Node ${room.id}`,
+    players: room.gameState.players.length,
+    maxPlayers: 8, // hardcode for now
+    pot: room.gameState.pot,
+    inProgress: room.gameState.inProgress,
+    spectators: room.spectators.length,
+    type: room.type || "No Limit Hold'em", 
+    stakes: room.stakes || "1K / 2K USDC",
+    isDemo: room.isDemo || false
+  }));
 };
